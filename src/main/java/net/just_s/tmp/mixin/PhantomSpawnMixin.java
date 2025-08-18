@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(PhantomSpawner.class)
 public class PhantomSpawnMixin {
@@ -30,76 +30,69 @@ public class PhantomSpawnMixin {
 	private int tick;
 
 	@Inject(at = @At("HEAD"), method = "spawn", cancellable = true)
-	private void tick(ServerWorld world, boolean spawnMonsters, boolean spawnAnimals, CallbackInfoReturnable<Integer> cir) {
+	private void tick(ServerWorld world, boolean spawnMonsters, boolean spawnAnimals,
+					  CallbackInfo ci) {
 		if (!spawnMonsters || !TMPMod.CONFIG.doInsomnia) {
-			cir.setReturnValue(0);
+			ci.cancel(); // отменяем выполнение оригинального метода
 			return;
 		}
 		--this.tick;
 		if (this.tick <= 0) {
-			this.tick += 20 * (TMPMod.CONFIG.insomniaMinCycleTime + world.random.nextInt(TMPMod.CONFIG.insomniaRandomizationTime));
+			this.tick += 20 * (TMPMod.CONFIG.insomniaMinCycleTime +
+					world.random.nextInt(TMPMod.CONFIG.insomniaRandomizationTime));
 			if (!world.isDay()) {
-				cir.setReturnValue(customSpawn(world));
+				ci.cancel();
+				customSpawn(world);
 			}
 		}
 	}
 
 	@Unique
-	private int customSpawn(ServerWorld world) {
+	private void customSpawn(ServerWorld world) {
 		Random random = world.random;
-		int phantomsSpawned = 0;
-
 		for (ServerPlayerEntity player : world.getPlayers()) {
-			if (player.isCreative() || player.isSpectator()) {
-				continue;
-			}
+			if (player.isCreative() || player.isSpectator()) continue;
 
 			ServerStatHandler stats = player.getStatHandler();
-			int noRest = Math.max(1, Math.min(2147483647, stats.getStat(Stats.CUSTOM.getOrCreateStat(Stats.TIME_SINCE_REST))));
+			int noRest = Math.max(1, stats.getStat(Stats.CUSTOM.getOrCreateStat(Stats.TIME_SINCE_REST)));
 
-			if (random.nextInt(noRest) <= TMPMod.CONFIG.insomniaSpawnStartTimer * 20) {
-				continue;
-			}
+			if (random.nextInt(noRest) <= TMPMod.CONFIG.insomniaSpawnStartTimer * 20) continue;
 
 			BlockPos bpos = player.getBlockPos();
 			Vec3d worldSpawn = world.getSpawnPos().toCenterPos();
 			double squaredRadius = TMPMod.CONFIG.phantomFreeArea * TMPMod.CONFIG.phantomFreeArea;
-			boolean isInRadius = player.squaredDistanceTo(worldSpawn) <= squaredRadius;
-
+			if (player.squaredDistanceTo(worldSpawn) <= squaredRadius) continue;
 			if (bpos.getY() < world.getSeaLevel()) continue;
 			if (!world.isSkyVisible(bpos)) continue;
 			if (TMPMod.CONFIG.insomniaLightStopsPhantoms < world.getLightLevel(bpos)) continue;
-			if (isInRadius) continue;
 
-			// all checks are fine, now finding place to spawn
 			BlockPos spawnPos;
 			BlockState blockState;
 			FluidState fluidState;
-			int k = 64; // safeguard
+			int k = 64;
 			do {
-				spawnPos = bpos.up(20 + random.nextInt(15)).east(-10 + random.nextInt(21)).south(-10 + random.nextInt(21));
+				spawnPos = bpos.up(20 + random.nextInt(15))
+						.east(-10 + random.nextInt(21))
+						.south(-10 + random.nextInt(21));
 				blockState = world.getBlockState(spawnPos);
 				fluidState = world.getFluidState(spawnPos);
 				k--;
 			} while (!SpawnHelper.isClearForSpawn(world, spawnPos, blockState, fluidState, EntityType.PHANTOM) && k > 0);
 			if (k <= 0) continue;
 
-			// place found, calculate phantoms amount for player
 			EntityData entityData = null;
 			LocalDifficulty localDifficulty = world.getLocalDifficulty(bpos);
-			int amountOfPhantomsForPlayer = TMPMod.CONFIG.minAmountPerSpawn + random.nextInt(localDifficulty.getGlobalDifficulty().getId() + 1);
-			amountOfPhantomsForPlayer = MathHelper.clamp(amountOfPhantomsForPlayer, TMPMod.CONFIG.minAmountPerSpawn, TMPMod.CONFIG.maxAmountPerSpawn);
+			int amount = TMPMod.CONFIG.minAmountPerSpawn +
+					random.nextInt(localDifficulty.getGlobalDifficulty().getId() + 1);
+			amount = MathHelper.clamp(amount, TMPMod.CONFIG.minAmountPerSpawn, TMPMod.CONFIG.maxAmountPerSpawn);
 
-			for (int m = 0; m < amountOfPhantomsForPlayer; ++m) {
-				PhantomEntity phantomEntity = EntityType.PHANTOM.create(world);
-				if (phantomEntity == null) continue;
-				phantomEntity.refreshPositionAndAngles(spawnPos, 0.0F, 0.0F);
-				entityData = phantomEntity.initialize(world, localDifficulty, SpawnReason.NATURAL, entityData);
-				world.spawnEntityAndPassengers(phantomEntity);
-				phantomsSpawned++;
+			for (int m = 0; m < amount; m++) {
+				PhantomEntity phantom = EntityType.PHANTOM.create(world, SpawnReason.NATURAL);
+				if (phantom == null) continue;
+				phantom.refreshPositionAndAngles(spawnPos, 0.0F, 0.0F);
+				entityData = phantom.initialize(world, localDifficulty, SpawnReason.NATURAL, entityData);
+				world.spawnEntityAndPassengers(phantom);
 			}
 		}
-
-		return phantomsSpawned;
 	}
 }

@@ -7,25 +7,25 @@ import java.io.*;
 public class Config {
     private final File file = FabricLoader.getInstance().getConfigDir().resolve("TooMuchPhantoms.conf").toFile();
 
-    // Whether phantoms spawn after no sleep (note: gamerule does nothing)
+    // Спаунятся ли фантомы после отсутствия сна (примечание: игровое правило не работает)
     public boolean doInsomnia = true;
 
-    // How many seconds until phantoms should start spawning based on insomnia (Vanilla: 3600)
+    // Через сколько секунд начинают спауниться фантомы из-за бессонницы (Ванилла: 3600)
     public int insomniaSpawnStartTimer = 3600;
 
-    // Min seconds after phantoms have spawned to try to spawn more (Vanilla: 60)
+    // Минимальное время в секундах между спаунами фантомов (Ванилла: 60)
     public int insomniaMinCycleTime = 90;
 
-    // Max seconds to randomly add from the min spawn cycle time (Vanilla: 60)
+    // Максимальное случайное время в секундах, добавляемое к минимальному времени между спаунами (Ванилла: 60)
     public int insomniaRandomizationTime = 80;
 
-    // Light level where the player is standing that phantom spawning (Vanilla: 999 (disabled))
+    // Уровень освещения, при котором фантомы не спаунятся (Ванилла: 999 (отключено))
     public int insomniaLightStopsPhantoms = 15;
 
-    // Radius from world spawn where no phantoms would spawn (Vanilla: 0 (disabled))
+    // Радиус вокруг точки спауна мира, где фантомы не появляются (Ванилла: 0 (отключено))
     public int phantomFreeArea = 0;
 
-    // Limits for amount of phantoms spawning per group
+    // Лимиты количества фантомов в одной группе при спауне
     public int minAmountPerSpawn = 1;
     public int maxAmountPerSpawn = 3;
 
@@ -67,25 +67,25 @@ public class Config {
         try {
             TMPMod.LOGGER.info("Generating brand new .conf file...");
             FileWriter writer = new FileWriter(file);
-            writer.write("# Whether phantoms spawn after no sleep (note: gamerule does nothing)\n");
+            writer.write("# Спаунятся ли фантомы после отсутствия сна (примечание: игровое правило не работает)\n");
             writer.write("doInsomnia=" + doInsomnia + "\n\n");
 
-            writer.write("# How many seconds until phantoms should start spawning based on insomnia (Vanilla: 3600)\n");
+            writer.write("# Через сколько секунд начинают спауниться фантомы из-за бессонницы (Ванилла: 3600)\n");
             writer.write("insomniaSpawnStartTimer=" + insomniaSpawnStartTimer + "\n\n");
 
-            writer.write("# Min seconds after phantoms have spawned to try to spawn more (Vanilla: 60)\n");
+            writer.write("# Минимальное время в секундах между спаунами фантомов (Ванилла: 60)\n");
             writer.write("insomniaMinCycleTime=" + insomniaMinCycleTime + "\n\n");
 
-            writer.write("# Max seconds to randomly add from the min spawn cycle time (Vanilla: 60)\n");
+            writer.write("# Максимальное случайное время в секундах, добавляемое к минимальному времени между спаунами (Ванилла: 60)\n");
             writer.write("insomniaRandomizationTime=" + insomniaRandomizationTime + "\n\n");
 
-            writer.write("# Light level where the player is standing that phantom spawning (Vanilla: 999 (disabled))\n");
+            writer.write("# Уровень освещения, при котором фантомы не спаунятся (Ванилла: 999 (отключено))\n");
             writer.write("insomniaLightStopsPhantoms=" + insomniaLightStopsPhantoms + "\n\n");
 
-            writer.write("# Radius from world spawn where no phantoms would spawn (Vanilla: 0 (disabled))\n");
+            writer.write("# Радиус вокруг точки спауна мира, где фантомы не появляются (Ванилла: 0 (отключено))\n");
             writer.write("phantomFreeArea=" + phantomFreeArea + "\n\n");
 
-            writer.write("# Limits for amount of phantoms spawning per group\n");
+            writer.write("# Лимиты количества фантомов в одной группе при спауне\n");
             writer.write("minAmountPerSpawn=" + minAmountPerSpawn + "\n");
             writer.write("maxAmountPerSpawn=" + maxAmountPerSpawn);
             writer.close();
@@ -93,6 +93,5 @@ public class Config {
         } catch (IOException e) {
             TMPMod.LOGGER.error("Error on Config.dump() > " + e.getMessage());
         }
-
     }
 }
